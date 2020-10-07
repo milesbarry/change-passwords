@@ -1,0 +1,19 @@
+---
+- name: Check {{ item }} user exists
+  getent:
+    database: passwd
+    key: "{{ item }}"
+    fail_key: no
+  register: r
+
+- name: Change {{ item }} password
+  user:
+    name: "{{ item }}"
+    password: "{{ accounts[item] | password_hash('sha512') }}"
+  become: yes
+  when: r.ansible_facts.getent_passwd[item]
+
+- name: Append {{ item }} to changed_users
+  set_fact:
+    changed_users: "{{ changed_users | default([]) + [item] }}"
+  when: r.ansible_facts.getent_passwd[item]
